@@ -1,0 +1,72 @@
+# ══════════════════════════════════════════════════════
+# Python
+# ══════════════════════════════════════════════════════
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+.venv/
+venv/
+env/
+
+# ══════════════════════════════════════════════════════
+# Environment & secrets
+# ══════════════════════════════════════════════════════
+.env
+*.key
+*.pem
+
+# ══════════════════════════════════════════════════════
+# OS junk
+# ══════════════════════════════════════════════════════
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ══════════════════════════════════════════════════════
+# IDE
+# ══════════════════════════════════════════════════════
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ══════════════════════════════════════════════════════
+# Pipeline — large / regeneratable files
+# ══════════════════════════════════════════════════════
+pipeline/sources/*.pdf
+pipeline/intermediate/*.pkl
+pipeline/intermediate/*.csv
+pipeline/output/*.png
+pipeline/.ipynb_checkpoints/
+pipeline/notebooks/.ipynb_checkpoints/
+
+# KEEP: pipeline/output/*.csv (the actual dataset — committed)
+!pipeline/output/buffett_qa_dataset.csv
+!pipeline/output/buffett_qa_detailed.csv
+
+# ══════════════════════════════════════════════════════
+# Backend — generated data & indices
+# ══════════════════════════════════════════════════════
+backend/data/indices/
+backend/data/chunks/*.pkl
+backend/data/csvs/*.csv
+
+# ══════════════════════════════════════════════════════
+# Frontend — node / build artifacts
+# ══════════════════════════════════════════════════════
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.local
+
+# ══════════════════════════════════════════════════════
+# Jupyter
+# ══════════════════════════════════════════════════════
+.ipynb_checkpoints/
+*.ipynb_checkpoints/

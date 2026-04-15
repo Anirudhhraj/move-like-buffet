@@ -1,0 +1,19 @@
+﻿# PDF extraction
+PyMuPDF>=1.24.0
+
+# LLM routing
+litellm>=1.40.0
+
+# Embeddings & dedup
+sentence-transformers>=3.0.0
+scikit-learn>=1.5.0
+
+# Data handling
+pandas>=2.2.0
+
+# Notebooks
+jupyter>=1.0.0
+ipykernel>=6.29.0
+
+# Async support in notebooks
+nest-asyncio>=1.6.0
