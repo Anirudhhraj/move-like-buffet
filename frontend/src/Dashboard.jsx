@@ -165,6 +165,8 @@ const RATIO_META = [
 function fmtR(v, m) { if (v == null) return "N/A"; if (m.fmt) return m.fmt(v); return `${v.toFixed(1)}%`; }
 
 function Scorecard({ data }) {
+  if (!data || !Array.isArray(data.ratios) || data.ratios.length === 0) return <LoadingState tab="scorecard" />;
+
   const ps = data.ratios, latest = ps[0];
   const passed = RATIO_META.filter(m => latest[m.key] != null && m.pass(latest[m.key])).length;
   const failed = RATIO_META.filter(m => latest[m.key] != null && !m.pass(latest[m.key])).length;
@@ -205,6 +207,7 @@ function Scorecard({ data }) {
 }
 
 function DCFPanel({ data }) {
+  if (!data || !Array.isArray(data.pv_fcf_by_year)) return <LoadingState tab="dcf" />;
   const vt = data.verdict === "Undervalued" ? "success" : data.verdict === "Overvalued" ? "danger" : "warning";
   const cd = data.pv_fcf_by_year.map((v, i) => ({ year: `Y${i + 1}`, pv: Math.round(v / 1e6) }));
   return (
@@ -220,8 +223,7 @@ function DCFPanel({ data }) {
         <BarChart data={cd} barSize={24}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.bd} />
           <XAxis dataKey="year" tick={axStyle} axisLine={false} tickLine={false} />
           <YAxis tick={axStyle} axisLine={false} tickLine={false} tickFormatter={v => `$${v}M`} />
-          <Tooltip contentStyle={ttStyle} formatter={v => [`$${v}M`, "PV FCF"]} />
-          <Bar dataKey="pv" radius={[0,0,0,0]}>{cd.map((_, i) => <Cell key={i} fill={i % 2 === 0 ? C.blue : "#7aa8c9"} />)}</Bar>
+          <Tooltip contentStyle={ttStyle} labelStyle={{ color: C.accent, fontWeight: 700 }} itemStyle={{ color: C.tx1 }} formatter={v => [`$${v}M`, "PV FCF"]} />          <Bar dataKey="pv" radius={[0,0,0,0]}>{cd.map((_, i) => <Cell key={i} fill={i % 2 === 0 ? C.blue : "#7aa8c9"} />)}</Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -229,6 +231,7 @@ function DCFPanel({ data }) {
 }
 
 function AltmanPanel({ data }) {
+  if (!data || !data.components) return <LoadingState tab="altman" />;
   const tone = data.zone === "Safe Zone" ? "success" : data.zone === "Grey Zone" ? "warning" : "danger";
   const comps = [
     { l: "Working Capital / Assets", v: data.components.X1_working_capital_ratio },
@@ -262,6 +265,7 @@ function AltmanPanel({ data }) {
 }
 
 function PiotroskiPanel({ data }) {
+  if (!data || !data.signals) return <LoadingState tab="piotroski" />;
   const tone = data.f_score >= 8 ? "success" : data.f_score >= 5 ? "warning" : "danger";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -286,6 +290,8 @@ function PiotroskiPanel({ data }) {
 }
 
 function ClusterPanel({ data }) {
+  if (!data || !data.cluster_members) return <LoadingState tab="cluster" />;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <Sec>Peer Groups — {data.sector}</Sec>
@@ -305,6 +311,8 @@ function ClusterPanel({ data }) {
 }
 
 function TechnicalPanel({ data }) {
+  if (!data || !Array.isArray(data.price_series)) return <LoadingState tab="technical" />;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -317,8 +325,7 @@ function TechnicalPanel({ data }) {
         <LineChart data={data.price_series}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.bd} />
           <XAxis dataKey="date" tick={axStyle} tickFormatter={d => d.slice(5)} interval={2} axisLine={false} tickLine={false} />
           <YAxis tick={axStyle} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-          <Tooltip contentStyle={ttStyle} formatter={v => [`$${v}`, "Price"]} />
-          <ReferenceLine y={data.ma_50} stroke={C.blue} strokeDasharray="5 3" />
+          <Tooltip contentStyle={ttStyle} labelStyle={{ color: C.accent, fontWeight: 700 }} itemStyle={{ color: C.tx1 }} formatter={v => [`$${v}`, "Price"]} />          <ReferenceLine y={data.ma_50} stroke={C.blue} strokeDasharray="5 3" />
           <ReferenceLine y={data.ma_200} stroke={C.accent} strokeDasharray="5 3" />
           <Line type="monotone" dataKey="price" stroke={C.tx1} strokeWidth={2} dot={false} />
         </LineChart>
@@ -328,6 +335,8 @@ function TechnicalPanel({ data }) {
 }
 
 function MonteCarloPanel({ data }) {
+  if (!data || !data.forecast || !Array.isArray(data.chart_data)) return <LoadingState tab="montecarlo" />;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -342,8 +351,7 @@ function MonteCarloPanel({ data }) {
         <AreaChart data={data.chart_data}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.bd} />
           <XAxis dataKey="day" tick={axStyle} axisLine={false} tickLine={false} />
           <YAxis tick={axStyle} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
-          <Tooltip contentStyle={ttStyle} />
-          <Area type="monotone" dataKey="p90" stroke="none" fill="rgba(91,141,184,0.08)" name="P90" />
+          <Tooltip contentStyle={ttStyle} labelStyle={{ color: C.accent, fontWeight: 700 }} itemStyle={{ color: C.tx1 }} formatter={(v, name) => v != null ? [`$${Number(v).toFixed(2)}`, name] : ["—", name]} />          <Area type="monotone" dataKey="p90" stroke="none" fill="rgba(91,141,184,0.08)" name="P90" />
           <Area type="monotone" dataKey="p75" stroke="none" fill="rgba(74,158,109,0.08)" name="P75" />
           <Area type="monotone" dataKey="p25" stroke="none" fill="rgba(201,168,76,0.08)" name="P25" />
           <Area type="monotone" dataKey="p10" stroke="none" fill="rgba(196,70,58,0.08)" name="P10" />
@@ -425,7 +433,6 @@ export default function Dashboard() {
     const tabDef = TABS.find(t => t.id === tab);
     if (!tabDef || !symbol) return;
     const url = `${API}${tabDef.ep(symbol)}`;
-    if (lastFetch.current.url === url && lastFetch.current.tab === tab && lastFetch.current.sym === symbol) return;
     lastFetch.current = { tab, sym: symbol, url };
     await tabDataRun(url);
   }, [tabDataRun]);
@@ -448,13 +455,13 @@ export default function Dashboard() {
     fetchingRef.current = false;
   }
 
-  // Debounced tab switch — 200ms absorbs rapid clicking, reduces yfinance pressure
+  // Tab switch — tiny debounce just to absorb React StrictMode double-fire
   useEffect(() => {
     if (!activeSym) return;
     if (tabDebounce.current) clearTimeout(tabDebounce.current);
     tabDebounce.current = setTimeout(() => {
       fetchTab(subTab, activeSym);
-    }, 200);
+    }, 50);
     return () => { if (tabDebounce.current) clearTimeout(tabDebounce.current); };
   }, [subTab, activeSym, fetchTab]);
 
