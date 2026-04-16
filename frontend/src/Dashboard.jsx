@@ -406,7 +406,7 @@ const TABS = [
    ══════════════════════════════════════════════════════════════════════ */
 
 export default function Dashboard() {
-  const [inputSym, setInputSym] = useState("AAPL");
+  const [inputSym, setInputSym] = useState("GOOGL");
   const [activeSym, setActiveSym] = useState("");
   const [subTab, setSubTab] = useState("scorecard");
   const [fetching, setFetching] = useState(false);
@@ -460,7 +460,7 @@ export default function Dashboard() {
 
   // Auto-load AAPL immediately — no delay, ticker is held back so yfinance is free
   useEffect(() => {
-    fetchSymbol("AAPL");
+    fetchSymbol("GOOGL");
   }, []);
 
   function renderPanel() {
@@ -502,7 +502,7 @@ export default function Dashboard() {
           <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
             <div style={{ position: "relative", flex: "0 0 auto", maxWidth: 260, width: "100%" }}>
               <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: C.tx3, fontFamily: MONO, fontWeight: 700 }}>SYM</span>
-              <input value={inputSym} onChange={e => setInputSym(e.target.value.toUpperCase())} onKeyDown={e => e.key === "Enter" && fetchSymbol(inputSym)} placeholder="AAPL" style={{ ...inputSt, paddingLeft: 48, maxWidth: 260 }} />
+              <input value={inputSym} onChange={e => setInputSym(e.target.value.toUpperCase())} onKeyDown={e => e.key === "Enter" && fetchSymbol(inputSym)} placeholder="GOOGL" style={{ ...inputSt, paddingLeft: 48, maxWidth: 260 }} />
             </div>
             <button onClick={() => fetchSymbol(inputSym)} disabled={fetching} style={{ padding: "10px 28px", border: "none", background: fetching ? C.bg4 : C.accent, color: fetching ? C.tx3 : C.bg0, fontSize: 12, fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase", cursor: fetching ? "default" : "pointer", fontFamily: SANS }}>{fetching ? "LOADING..." : "ANALYZE"}</button>
             {activeSym && !fetching && <span style={{ fontSize: 12, color: C.tx3, fontFamily: MONO }}>Showing: <strong style={{ color: C.accent }}>{activeSym}</strong></span>}
