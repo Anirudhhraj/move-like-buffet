@@ -1,6 +1,6 @@
 """
 Terminal chat with BuffettAgent.
-Shows strategy, inline citation references, confidence, and timing.
+Streams research events + LLM tokens live, validates citations.
 
 Usage:  cd backend && python chat.py
 Commands:  /quit  /clear  /stats
@@ -71,7 +71,7 @@ def show_sources(sources):
 
 def main():
     print(f"\n{SEP}")
-    print("  BUFFETT AGENT — Terminal Chat")
+    print("  BUFFETT AGENT — Terminal Chat (streaming)")
     print(SEP)
     print("\nLoading agent...\n")
 
@@ -103,35 +103,65 @@ def main():
             print(f"  QA: {s['qa_vectors']}  Chunks: {s['chunk_vectors']}\n")
             continue
 
-        result = agent.answer(query, history=history)
+        # ── Streaming callbacks ──────────────────────────────────────
+        token_count = 0
 
-        # Answer
-        print(f"\n{SEP}\n")
-        print(f"Buffett: {result.answer}\n")
+        def on_research(event):
+            """Display research + citation events inline."""
+            if event.step == "generating":
+                # Signal: next output will be streamed tokens
+                print(f"  [{event.step:>10}] {event.detail}", flush=True)
+            elif event.step == "citation":
+                # Citation issues appear after streaming finishes
+                print(f"  [  citation] {event.detail}")
+            else:
+                print(f"  [{event.step:>10}] {event.detail}", flush=True)
 
-        # Show enriched query if it differs from original
+        def on_token(token):
+            """Print each token as it arrives from the LLM."""
+            nonlocal token_count
+            if token_count == 0:
+                print(f"\nBuffett: ", end="", flush=True)
+            print(token, end="", flush=True)
+            token_count += 1
+
+        # ── Call agent ───────────────────────────────────────────────
+        print()  # blank line before events
+        result = agent.answer(
+            query,
+            history=history,
+            on_event=on_research,
+            on_token=on_token,
+        )
+
+        # ── Display answer ───────────────────────────────────────────
+        if token_count > 0:
+            # Tokens were streamed — just add newline
+            print("\n")
+        else:
+            # No streaming (rejection or error) — print answer directly
+            print(f"\nBuffett: {result.answer}\n")
+
+        # ── Metadata ─────────────────────────────────────────────────
         if result.enriched_query:
             print(f"  Searched as: {result.enriched_query}")
 
-        # Metadata
         print(f"  Strategy:    {result.strategy}")
         print(f"  Reason:      {result.reason}")
         print(f"  Confidence:  {result.confidence}")
         print(f"  Time:        {result.duration_ms}ms")
 
-        # Tools (skip for rejections)
         if result.tools_called:
-            print("\n  Retrieval:")
+            print("\n  Initial retrieval:")
             show_tools(result.tools_called)
 
-        # Sources with citation numbers matching the answer's [1], [2], etc.
         if result.sources:
             print("\n  Citation map:")
             show_sources(result.sources)
 
         print(f"\n{SEP}\n")
 
-        # Update history for multi-turn
+        # ── Update history ───────────────────────────────────────────
         history.append({"role": "user", "content": query})
         history.append({"role": "assistant", "content": result.answer})
 

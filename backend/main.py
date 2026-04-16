@@ -5,14 +5,22 @@ Startup:
   1. Load config from .env
   2. Initialize BuffettAgent (loads/builds FAISS indices)
   3. Mount stock and chat routes
+
+Changes:
+  - Added /chat/stream SSE endpoint (the frontend needs this, not /chat)
+  - Kept /chat JSON endpoint for backward compat / API consumers
 """
 
+import json
 import logging
+import queue
+import threading
 from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from config import CORS_ORIGINS, HOST, PORT, LOG_LEVEL
@@ -96,12 +104,102 @@ def root():
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest):
+    """Non-streaming JSON endpoint (for API consumers)."""
     if agent is None:
         raise HTTPException(status_code=503, detail="Agent not initialized")
 
     history = [{"role": m.role, "content": m.content} for m in request.history]
     result = agent.answer(request.query, history=history)
     return result.to_dict()
+
+
+# ── SSE Streaming endpoint ───────────────────────────────────────────────
+
+@app.post("/chat/stream")
+def chat_stream(request: ChatRequest):
+    """
+    Server-Sent Events streaming endpoint.
+
+    Sends events of these types:
+      - type=research   {step, detail}           — research progress
+      - type=token      {content}                 — individual LLM tokens
+      - type=done       {data: {answer, strategy, ...}}  — final result
+      - type=error      {detail}                  — error message
+    """
+    if agent is None:
+        raise HTTPException(status_code=503, detail="Agent not initialized")
+
+    history = [{"role": m.role, "content": m.content} for m in request.history]
+
+    def generate_sse():
+        # Thread-safe queue for passing events from callbacks → SSE generator
+        event_queue = queue.Queue()
+
+        def on_event(event):
+            """Called by agent during research phases."""
+            event_queue.put({
+                "type": "research",
+                "step": event.step,
+                "detail": event.detail,
+            })
+
+        def on_token(token):
+            """Called for each LLM token."""
+            event_queue.put({
+                "type": "token",
+                "content": token,
+            })
+
+        def run_agent():
+            """Run agent.answer in a thread so we can stream from the main thread."""
+            try:
+                result = agent.answer(
+                    request.query,
+                    history=history,
+                    on_event=on_event,
+                    on_token=on_token,
+                )
+                event_queue.put({
+                    "type": "done",
+                    "data": result.to_dict(),
+                })
+            except Exception as exc:
+                logger.error("Agent error: %s", exc)
+                event_queue.put({
+                    "type": "error",
+                    "detail": str(exc),
+                })
+            finally:
+                event_queue.put(None)  # Sentinel to stop the generator
+
+        # Start agent in background thread
+        thread = threading.Thread(target=run_agent, daemon=True)
+        thread.start()
+
+        # Yield SSE events as they arrive
+        while True:
+            try:
+                event = event_queue.get(timeout=120)  # 2 min timeout
+            except queue.Empty:
+                # Timeout — send error and stop
+                yield f"data: {json.dumps({'type': 'error', 'detail': 'Request timed out'})}\n\n"
+                break
+
+            if event is None:
+                # Sentinel — agent is done
+                break
+
+            yield f"data: {json.dumps(event)}\n\n"
+
+    return StreamingResponse(
+        generate_sse(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # disable nginx buffering
+        },
+    )
 
 
 @app.post("/admin/rebuild-indices")
