@@ -83,11 +83,11 @@ class ChunkResearcher:
         result = researcher.research(query, initial_chunks, qa_context)
     """
 
-    MAX_ROUNDS = 3       # max analysis rounds after HyDE
-    MAX_CHUNKS = 15      # stop accumulating beyond this
-    HYDE_TOP_K = 6       # chunks retrieved via HyDE
-    QUERY_TOP_K = 4      # chunks per follow-up query
-    MIN_SIM = 0.15       # ignore chunks below this
+    MAX_ROUNDS = 4       # max analysis rounds after HyDE
+    MAX_CHUNKS = 20      # stop accumulating beyond this
+    HYDE_TOP_K = 10       # chunks retrieved via HyDE
+    QUERY_TOP_K = 6      # chunks per follow-up query
+    MIN_SIM = 0.2      # ignore chunks below this
 
     def __init__(
         self,
@@ -242,8 +242,8 @@ class ChunkResearcher:
     ) -> dict:
         evidence = "\n\n".join(
             f"[{c.get('label', '?')} — {c.get('source_file', '?')}]\n"
-            f"{c['text'][:400]}"
-            for c in chunks[:10]
+            f"{c['text'][:800]}"
+            for c in chunks[:18]
         )
         try:
             resp = self.llm.chat.completions.create(

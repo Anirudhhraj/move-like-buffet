@@ -321,9 +321,9 @@ class BuffettAgent:
         strategy: str, retrieval: RetrievalResult,
     ) -> tuple[str, list[SourceRef]]:
         if strategy == STRATEGY_QA_MATCH:
-            qa_limit, chunk_limit = 3, 2
+            qa_limit, chunk_limit = 5, 4
         else:
-            qa_limit, chunk_limit = 5, 6
+            qa_limit, chunk_limit = 8, 10
 
         sources = []
         lines = []
@@ -352,7 +352,7 @@ class BuffettAgent:
                 loc += f", {r.source_file}"
             if section:
                 loc += f" > {section}"
-            lines.append(f"[{idx}] ({loc})\n{r.text[:600]}")
+            lines.append(f"[{idx}] ({loc})\n{r.text[:2000]}")
             sources.append(SourceRef(
                 ref_idx=idx, source_type="chunk",
                 label=r.label, source_file=r.source_file,
@@ -393,7 +393,7 @@ class BuffettAgent:
                 model=DEEPSEEK_MODEL,
                 messages=messages,
                 temperature=0.3,
-                max_tokens=800,
+                max_tokens=1200,
             )
             return resp.choices[0].message.content.strip()
         except Exception as exc:
@@ -410,7 +410,7 @@ class BuffettAgent:
                 model=DEEPSEEK_MODEL,
                 messages=messages,
                 temperature=0.3,
-                max_tokens=1000,
+                max_tokens=1200,
                 stream=True,
             )
             for chunk in resp:
@@ -555,7 +555,7 @@ class BuffettAgent:
     ) -> list[dict]:
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         if history:
-            for msg in history[-6:]:
+            for msg in history[-8:]:
                 messages.append({"role": msg["role"], "content": msg["content"]})
         messages.append({"role": "user", "content": user_prompt})
         return messages

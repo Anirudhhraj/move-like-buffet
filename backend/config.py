@@ -25,8 +25,8 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 
 # ── RAG tuning ───────────────────────────────────────────────────────────
 QA_MATCH_THRESHOLD = float(os.getenv("QA_MATCH_THRESHOLD", "0.82"))
-RETRIEVAL_TOP_K = int(os.getenv("RETRIEVAL_TOP_K", "6"))
-CHUNK_TOP_K = int(os.getenv("CHUNK_TOP_K", "4"))
+RETRIEVAL_TOP_K = int(os.getenv("RETRIEVAL_TOP_K", "10"))
+CHUNK_TOP_K = int(os.getenv("CHUNK_TOP_K", "8"))
 
 # ── Stock / Yahoo Finance ────────────────────────────────────────────────
 YF_MAX_RETRIES = int(os.getenv("YF_MAX_RETRIES", "3"))
