@@ -73,3 +73,5 @@ frontend/*.local
 
 backend/stock/data/cache/
 backend/stock/data/
+
+deploy.env
