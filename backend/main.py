@@ -224,3 +224,38 @@ app.include_router(stock_router, prefix="/stock", tags=["Stock Analysis"])
 
 # Also expose quotes at /api/quotes for backward compat with existing frontend
 app.include_router(stock_router, prefix="/api", tags=["Compat"], include_in_schema=False)
+
+
+# ═════════════════════════════════════════════════════════════════════════
+# ADDITIONS BELOW — existing code above is 100% untouched
+# ═════════════════════════════════════════════════════════════════════════
+
+# ── Health check (optional — convenient for deploy scripts) ──────────────
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+# ── Serve built frontend in production ───────────────────────────────────
+# WHY THIS IS NECESSARY:
+#   Inside Docker there is no Vite dev server. There is no `npm run dev`.
+#   Only uvicorn is running. When a browser loads index.html and requests
+#   /assets/index-abc123.js (the compiled React bundle), something has to
+#   serve that file. Without this mount, uvicorn returns 404 for every
+#   frontend asset and the app cannot load.
+#
+#   This only activates when the static/ directory exists (inside the
+#   Docker image). Locally you still use `npm run dev` as before —
+#   this code is a no-op without the directory.
+#
+# URL NOTE:
+#   The existing @app.get("/") route still returns API JSON at "/".
+#   The frontend loads at http://<host>:8000/index.html because FastAPI
+#   matches explicit routes before mounts. All API routes (/chat, /stock,
+#   /api) continue to work exactly as before — the mount only catches
+#   requests that don't match any existing route.
+import os as _os
+_static_dir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "static")
+if _os.path.isdir(_static_dir):
+    from starlette.staticfiles import StaticFiles
+    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="frontend")

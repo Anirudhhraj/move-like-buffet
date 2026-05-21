@@ -1,0 +1,27 @@
+__pycache__
+*.pyc
+.git
+.gitignore
+.venv
+*.egg-info
+
+# Frontend build artifacts (rebuilt in container)
+frontend/node_modules
+frontend/dist
+
+# Pipeline — not needed at runtime
+pipeline/
+
+# Backend dev tools — not needed at runtime
+backend/build_indices.py
+backend/sync_pipeline.py
+backend/setup.py
+backend/chat.py
+
+# Env files (passed at runtime, not baked in)
+.env
+deploy.env
+
+# Build artifacts
+*.tar.gz
+*.zip
